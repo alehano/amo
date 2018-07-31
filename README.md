@@ -1,4 +1,4 @@
-# git init
+# Amo CRM API (v2) in Go
 
 
 Simple Amo CRM API wrapper.
