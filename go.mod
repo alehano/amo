@@ -1,3 +1,3 @@
-module github.com/alehano/amo
+module github.com/alehano/amo/v2
 
 go 1.15
