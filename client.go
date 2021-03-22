@@ -1,19 +1,17 @@
 package amo
 
 import (
+	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"errors"
 	"net/http"
 	"net/url"
 	"time"
-	"bytes"
-	"errors"
 )
 
 // Client AmoCRM API Client
 type Client struct {
-	userLogin         string
-	userHash          string
+	AccessToken       string
 	Timezone          string
 	accountWebAddress *url.URL
 	rateLimiter       RateLimiter
@@ -35,7 +33,7 @@ func NewClient(accountWebAddress string, rateLimiter RateLimiter) (*Client, erro
 // AuthResponse information about Amo' user and account.
 type AuthResponse struct {
 	Response struct {
-		Auth bool `json:"auth"`
+		Auth     bool `json:"auth"`
 		Accounts []struct {
 			ID        string `json:"id"`
 			Name      string `json:"name"`
@@ -47,50 +45,11 @@ type AuthResponse struct {
 	} `json:"response"`
 }
 
-// Authorize In case of successful authorization,
-// this method returns the user’s session ID,
-// which must be used while accessing to other API methods.
-// Saves user's login and hash into the client for next usage.
-func (c *Client) Authorize(userLogin, userHash string) (*AuthResponse, error) {
-	c.userHash = userHash
-	c.userLogin = userLogin
-	reqURL := *c.accountWebAddress
-	reqURL.Path = "/private/api/auth.php"
-	values := reqURL.Query()
-	values.Set("type", "json")
-	reqURL.RawQuery = values.Encode()
-	c.rateLimiter.WaitForRequest()
-	client := &http.Client{
-		Timeout: c.timeout,
-	}
-	resp, err := client.PostForm(reqURL.String(),
-		url.Values{"USER_LOGIN": {c.userLogin}, "USER_HASH": {c.userHash}})
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	var authResponse AuthResponse
-	err = json.Unmarshal(body, &authResponse)
-	if err != nil {
-		return nil, err
-	}
-	if len(authResponse.Response.Accounts) > 0 {
-		c.Timezone = authResponse.Response.Accounts[0].Timezone
-	}
-	return &authResponse, nil
-}
-
 // Set URL and add default params
 func (c *Client) SetURL(url string, addValues map[string]string) string {
 	reqURL := *c.accountWebAddress
 	reqURL.Path = url
 	values := reqURL.Query()
-	values.Set("USER_LOGIN", c.userLogin)
-	values.Set("USER_HASH", c.userHash)
 	if addValues != nil {
 		for key, value := range addValues {
 			values.Set(key, value)
@@ -102,7 +61,13 @@ func (c *Client) SetURL(url string, addValues map[string]string) string {
 
 func (c *Client) DoGet(url string, result interface{}) error {
 	c.rateLimiter.WaitForRequest()
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization: Bearer", c.AccessToken)
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -118,7 +83,14 @@ func (c *Client) DoPost(url string, data interface{}) (*http.Response, error) {
 		return nil, err
 	}
 	c.rateLimiter.WaitForRequest()
-	return http.Post(url, "application/json", buf)
+	req, err := http.NewRequest("POST", url, buf)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization: Bearer", c.AccessToken)
+	client := &http.Client{}
+	return client.Do(req)
 }
 
 // Post with return ID on new entity
