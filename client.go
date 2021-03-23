@@ -23,7 +23,7 @@ type Client struct {
 
 // NewClient creates and initializes AmoCRM API.
 // accountWebAddress is your AmoCRM account address like https://your-account.amocrm.com
-func NewClient(accountWebAddress string, token *oauth2.Token, rateLimiter RateLimiter) (*Client, error) {
+func NewClient(accountWebAddress string, token *oauth2.Token, config *oauth2.Config, rateLimiter RateLimiter) (*Client, error) {
 	c := &Client{rateLimiter: rateLimiter, timeout: 5 * time.Second}
 	if c.rateLimiter == nil {
 		c.rateLimiter = defaultRTLimiter
@@ -31,6 +31,7 @@ func NewClient(accountWebAddress string, token *oauth2.Token, rateLimiter RateLi
 	var err error
 	c.accountWebAddress, err = url.Parse(accountWebAddress)
 	c.token = token
+	c.config = config
 	return c, err
 }
 
