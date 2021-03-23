@@ -7,11 +7,11 @@ type Account struct {
 	Subdomain      string `json:"subdomain"`
 	Currency       string `json:"currency"`
 	Timezone       string `json:"timezone"`
-	TimezoneOffset string `json:"timezoneoffset"`
+	TimezoneOffset string `json:"timezone_offset"`
 	Language       string `json:"language"`
 	CurrentUser    int    `json:"current_user"`
 	Embedded struct {
-		Users map[string]User
+		Users map[int]User `json:"users"`
 		CustomFields struct {
 			Contacts  map[string]AccountCustomField `json:"contacts"`
 			Leads     map[string]AccountCustomField `json:"leads"`
