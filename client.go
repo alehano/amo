@@ -98,7 +98,7 @@ func (c *Client) DoPost(url string, data interface{}) (*http.Response, error) {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization: Bearer", c.token.AccessToken)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
 	client := c.config.Client(context.TODO(), c.token)
 	return client.Do(req)
 }
