@@ -75,7 +75,7 @@ func (c *Client) DoGet(url string, result interface{}) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer c.token.AccessToken"))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
 	client := c.config.Client(context.TODO(), c.token)
 	resp, err := client.Do(req)
 	if err != nil {
