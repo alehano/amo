@@ -51,8 +51,9 @@ type AuthResponse struct {
 	} `json:"response"`
 }
 
-func (c *Client) GetToken() *oauth2.Token {
-	return c.token
+func (c *Client) GetToken() (*oauth2.Token, error) {
+	ts := c.config.TokenSource(context.TODO(), c.token)
+	return ts.Token()
 }
 
 // Set URL and add default params
