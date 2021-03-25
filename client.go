@@ -53,7 +53,12 @@ type AuthResponse struct {
 
 func (c *Client) GetToken() (*oauth2.Token, error) {
 	ts := c.config.TokenSource(context.TODO(), c.token)
-	return ts.Token()
+	t, err := ts.Token()
+	if err != nil {
+		return nil, err
+	}
+	c.token = t
+	return t, nil
 }
 
 // Set URL and add default params
@@ -76,8 +81,12 @@ func (c *Client) DoGet(url string, result interface{}) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
-	client := c.config.Client(context.TODO(), c.token)
+	t, err := c.GetToken()
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.AccessToken))
+	client := c.config.Client(context.TODO(), t)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -98,9 +107,13 @@ func (c *Client) DoPost(url string, data interface{}) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	t, err := c.GetToken()
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
-	client := c.config.Client(context.TODO(), c.token)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.AccessToken))
+	client := c.config.Client(context.TODO(), t)
 	return client.Do(req)
 }
 
