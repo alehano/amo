@@ -20,6 +20,7 @@ type Client struct {
 	accountWebAddress *url.URL
 	rateLimiter       RateLimiter
 	timeout           time.Duration
+	notifyFunc        func(*oauth2.Token)
 }
 
 // NewClient creates and initializes AmoCRM API.
@@ -57,8 +58,17 @@ func (c *Client) GetToken() (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.token = t
+	if t.AccessToken != c.token.AccessToken {
+		c.token = t
+		if c.notifyFunc != nil {
+			c.notifyFunc(c.token)
+		}
+	}
 	return t, nil
+}
+
+func (c *Client) SetNotifyFunc(fn func(*oauth2.Token)) {
+	c.notifyFunc = fn
 }
 
 // Set URL and add default params
